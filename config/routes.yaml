@@ -1,14 +1,38 @@
-#index:
-#    path: /
-#    controller: App\Controller\DefaultController::index
-
 
 api_user_register:
-  path: /register
-  controller: App\Controller\UserController::register
+  path: /admin/user/register
+  controller: App\Controller\AuthController::register
   methods: POST
 
 api_user_login:
-  path:       /login
-  controller: App\Controller\UserController::login
+  path: /login
+  controller: App\Controller\AuthController::login
   methods: POST
+
+api_user_token:
+  path: /user/token
+  controller: App\Controller\AuthController::createAuth
+  methods: POST
+
+
+api_user_create:
+  path:       /api/user
+  controller: App\Controller\UserController::createUser
+  methods:    POST
+
+api_user_show:
+  path:       /api/user/{id}
+  controller: App\Controller\UserController::showUser
+  methods:    GET
+
+
+api_user_update:
+  path:       /api/user/{id}
+  controller: App\Controller\UserController::updateUser
+  methods:    PUT
+
+
+api_user_delete:
+  path:       /api/user/{id}
+  controller: App\Controller\UserController::deleteUser
+  methods:    DELETE

@@ -5,19 +5,20 @@ namespace App\Controller;
 use App\Entity\Auth;
 use App\Entity\User;
 use App\Repository\AuthRepository;
-use App\Repository\UserRepository;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 
-class UserController extends ApiController
+class AuthController extends ApiController
 {
-    public function showUser($id,UserRepository $userRepository)
+    public function login(Request $request, AuthRepository $authRepository)
     {
         try {
-            $user = $userRepository->findOneBy(['id' => $id]);
+            $user = $this->getUser();
+            $authObj = $authRepository->findOneBy(['userId' => $user->getId()]);
             $data = [
                 'email' => $user->getEmail(),
                 'roles' => $user->getRoles(),
+                'token' => $authObj->getToken(),
             ];
             return $this->respondWithSuccess($data);
         } catch (\Exception $e) {
@@ -25,39 +26,19 @@ class UserController extends ApiController
         }
     }
 
-    public function updateUser($id,UserRepository $userRepository,Request $request)
-    {
-        try {
-            $user = $userRepository->findOneBy(['id' => $id]);
-            
-            $request = $this->transformJsonBody($request);
-            $roles = $request->get('roles');
-            $user->setRoles($roles);
-            $em = $this->getDoctrine()->getManager();
-            $em->persist($user);
-            $em->flush();
-            return $this->respondWithSuccess("User updated");
-        } catch (\Exception $e) {
-            return $this->respondValidationError($e->getMessage());
-        }
-    }
-
-
-    public function createUser(Request $request, UserPasswordEncoderInterface $encoder)
+    public function register(Request $request, UserPasswordEncoderInterface $encoder)
     {
         try {
             $em = $this->getDoctrine()->getManager();
             $request = $this->transformJsonBody($request);
             $password = $request->get('password');
             $email = $request->get('email');
-            $roles = $request->get('roles');
             if (empty($password) || empty($email)) {
                 return $this->respondValidationError("Invalid Password or Email");
             }
             $user = new User($email);
             $user->setPassword($encoder->encodePassword($user, $password));
             $user->setEmail($email);
-            $user->setRoles($roles);
             $em->persist($user);
             $em->flush();
             $data = [
@@ -71,14 +52,22 @@ class UserController extends ApiController
         }
     }
 
-    public function deleteUser($id,UserRepository $userRepository)
+    public function createAuth(Request $request)
     {
         try {
-            $user = $userRepository->findOneBy(['id' => $id]);
-            $entityManager = $this->getDoctrine()->getManager();
-            $entityManager->remove($user);
-            $entityManager->flush();
-            return $this->respondWithSuccess("user deleted");
+            $em = $this->getDoctrine()->getManager();
+            $request = $this->transformJsonBody($request);
+            $token = $request->get('token');
+            $userId = $request->get('userId');
+            if (empty($token) || empty($userId)) {
+                return $this->respondValidationError("Invalid Token or user Id");
+            }
+            $auth = new Auth($userId);
+            $auth->setUserId($userId);
+            $auth->setToken($token);
+            $em->persist($auth);
+            $em->flush();
+            return $this->respondWithSuccess("Token saved");
         } catch (\Exception $e) {
             return $this->respondValidationError($e->getMessage());
         }
