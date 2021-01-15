@@ -163,7 +163,7 @@ class UserController extends ApiController
         }
     }
 
-    public function deleteUser($id, UserRepository $userRepository, AuthRepository $authRepository)
+    public function deleteUser($id,Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
             $admin = self::getUser($request, $userRepository, $authRepository);
@@ -176,6 +176,7 @@ class UserController extends ApiController
                 return $this->respondValidationError("User is not Admin");
             }
 
+            $user = $userRepository->findOneBy(['id' => $id]);
             $entityManager = $this->getDoctrine()->getManager();
             $entityManager->remove($user);
             $entityManager->flush();
