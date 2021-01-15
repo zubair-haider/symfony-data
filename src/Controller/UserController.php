@@ -3,20 +3,23 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Repository\AuthRepository;
 use App\Repository\UserRepository;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 
 class UserController extends ApiController
 {
-    public function userProfile(UserRepository $userRepository)
+    public function userProfile(Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
-            $user = $this->getUser();
-            if (!$user) {
+            $token = $request->headers->get('Authorization');
+            $token = str_replace("Bearer ", "", $token);
+            $auth = $authRepository->findOneBy(['token' => $token]);
+            if (!$auth) {
                 return $this->respondValidationError("User not logged in");
             }
-
+            $user = $userRepository->findOneBy(['id' => $auth->getUserId()]);
             $data = [
                 'email' => $user->getEmail(),
                 'roles' => $user->getRoles(),
@@ -27,15 +30,16 @@ class UserController extends ApiController
         }
     }
 
-    public function userProfileUpdate(Request $request)
+    public function userProfileUpdate(Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
-            $user = $this->getUser();
-
-            if (!$user) {
+            $token = $request->headers->get('Authorization');
+            $token = str_replace("Bearer ", "", $token);
+            $auth = $authRepository->findOneBy(['token' => $token]);
+            if (!$auth) {
                 return $this->respondValidationError("User not logged in");
             }
-
+            $user = $userRepository->findOneBy(['id' => $auth->getUserId()]);
             $request = $this->transformJsonBody($request);
             $roles = $request->get('roles');
             $user->setRoles($roles);
@@ -48,15 +52,16 @@ class UserController extends ApiController
         }
     }
 
-    public function userProfileDelete(Request $request)
+    public function userProfileDelete(Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
-            $user = $this->getUser();
-
-            if (!$user) {
+            $token = $request->headers->get('Authorization');
+            $token = str_replace("Bearer ", "", $token);
+            $auth = $authRepository->findOneBy(['token' => $token]);
+            if (!$auth) {
                 return $this->respondValidationError("User not logged in");
             }
-
+            $user = $userRepository->findOneBy(['id' => $auth->getUserId()]);
             $em = $this->getDoctrine()->getManager();
             $em->remove($user);
             $em->flush();
@@ -80,7 +85,7 @@ class UserController extends ApiController
         }
     }
 
-    public function updateUser($id, UserRepository $userRepository, Request $request)
+    public function updateUser($id, Request $request)
     {
         try {
             $user = $userRepository->findOneBy(['id' => $id]);
