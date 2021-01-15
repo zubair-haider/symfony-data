@@ -2,16 +2,71 @@
 
 namespace App\Controller;
 
-use App\Entity\Auth;
 use App\Entity\User;
-use App\Repository\AuthRepository;
 use App\Repository\UserRepository;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 
 class UserController extends ApiController
 {
-    public function showUser($id,UserRepository $userRepository)
+    public function userProfile(UserRepository $userRepository)
+    {
+        try {
+            $user = $this->getUser();
+            if (!$user) {
+                return $this->respondValidationError("User not logged in");
+            }
+
+            $data = [
+                'email' => $user->getEmail(),
+                'roles' => $user->getRoles(),
+            ];
+            return $this->respondWithSuccess($data);
+        } catch (\Exception $e) {
+            return $this->respondValidationError($e->getMessage());
+        }
+    }
+
+    public function userProfileUpdate(Request $request)
+    {
+        try {
+            $user = $this->getUser();
+
+            if (!$user) {
+                return $this->respondValidationError("User not logged in");
+            }
+
+            $request = $this->transformJsonBody($request);
+            $roles = $request->get('roles');
+            $user->setRoles($roles);
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($user);
+            $em->flush();
+            return $this->respondWithSuccess("User updated");
+        } catch (\Exception $e) {
+            return $this->respondValidationError($e->getMessage());
+        }
+    }
+
+    public function userProfileDelete(Request $request)
+    {
+        try {
+            $user = $this->getUser();
+
+            if (!$user) {
+                return $this->respondValidationError("User not logged in");
+            }
+
+            $em = $this->getDoctrine()->getManager();
+            $em->remove($user);
+            $em->flush();
+            return $this->respondWithSuccess("User deleted");
+        } catch (\Exception $e) {
+            return $this->respondValidationError($e->getMessage());
+        }
+    }
+
+    public function showUser($id, UserRepository $userRepository)
     {
         try {
             $user = $userRepository->findOneBy(['id' => $id]);
@@ -25,11 +80,11 @@ class UserController extends ApiController
         }
     }
 
-    public function updateUser($id,UserRepository $userRepository,Request $request)
+    public function updateUser($id, UserRepository $userRepository, Request $request)
     {
         try {
             $user = $userRepository->findOneBy(['id' => $id]);
-            
+
             $request = $this->transformJsonBody($request);
             $roles = $request->get('roles');
             $user->setRoles($roles);
@@ -41,7 +96,6 @@ class UserController extends ApiController
             return $this->respondValidationError($e->getMessage());
         }
     }
-
 
     public function createUser(Request $request, UserPasswordEncoderInterface $encoder)
     {
@@ -71,7 +125,7 @@ class UserController extends ApiController
         }
     }
 
-    public function deleteUser($id,UserRepository $userRepository)
+    public function deleteUser($id, UserRepository $userRepository)
     {
         try {
             $user = $userRepository->findOneBy(['id' => $id]);
