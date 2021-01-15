@@ -31,6 +31,7 @@ class UserController extends ApiController
             }
 
             $data = [
+                'id' => $user->getId(),
                 'email' => $user->getEmail(),
                 'roles' => $user->getRoles(),
             ];
