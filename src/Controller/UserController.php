@@ -10,16 +10,26 @@ use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 
 class UserController extends ApiController
 {
+    protected function getUser($request, UserRepository $userRepository, $authRepository)
+    {
+        $token = $request->headers->get('Authorization');
+        $token = str_replace("Bearer ", "", $token);
+        $auth = $authRepository->findOneBy(['token' => $token]);
+        if (!$auth) {
+            return false;
+        }
+        $user = $userRepository->findOneBy(['id' => $auth->getUserId()]);
+        return $user;
+    }
+
     public function userProfile(Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
-            $token = $request->headers->get('Authorization');
-            $token = str_replace("Bearer ", "", $token);
-            $auth = $authRepository->findOneBy(['token' => $token]);
-            if (!$auth) {
-                return $this->respondValidationError("User not logged in");
+            $user = self::getUser($request, $userRepository, $authRepository);
+            if (!$user) {
+                $this->respondValidationError("User not valid");
             }
-            $user = $userRepository->findOneBy(['id' => $auth->getUserId()]);
+
             $data = [
                 'email' => $user->getEmail(),
                 'roles' => $user->getRoles(),
@@ -33,13 +43,11 @@ class UserController extends ApiController
     public function userProfileUpdate(Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
-            $token = $request->headers->get('Authorization');
-            $token = str_replace("Bearer ", "", $token);
-            $auth = $authRepository->findOneBy(['token' => $token]);
-            if (!$auth) {
-                return $this->respondValidationError("User not logged in");
+            $user = self::getUser($request, $userRepository, $authRepository);
+            if (!$user) {
+                $this->respondValidationError("User not valid");
             }
-            $user = $userRepository->findOneBy(['id' => $auth->getUserId()]);
+
             $request = $this->transformJsonBody($request);
             $roles = $request->get('roles');
             $user->setRoles($roles);
@@ -55,13 +63,11 @@ class UserController extends ApiController
     public function userProfileDelete(Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
-            $token = $request->headers->get('Authorization');
-            $token = str_replace("Bearer ", "", $token);
-            $auth = $authRepository->findOneBy(['token' => $token]);
-            if (!$auth) {
-                return $this->respondValidationError("User not logged in");
+            $user = self::getUser($request, $userRepository, $authRepository);
+            if (!$user) {
+                $this->respondValidationError("User not valid");
             }
-            $user = $userRepository->findOneBy(['id' => $auth->getUserId()]);
+
             $em = $this->getDoctrine()->getManager();
             $em->remove($user);
             $em->flush();
@@ -71,9 +77,19 @@ class UserController extends ApiController
         }
     }
 
-    public function showUser($id, UserRepository $userRepository)
+    public function showUser($id, Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
+            $admin = self::getUser($request, $userRepository, $authRepository);
+            if (!$admin) {
+                return $this->respondValidationError("User not valid");
+            }
+
+            $adminRoles = $admin->getRoles();
+            if (!in_array('ROLE_ADMIN', $adminRoles, true)) {
+                return $this->respondValidationError("User is not Admin");
+            }
+
             $user = $userRepository->findOneBy(['id' => $id]);
             $data = [
                 'email' => $user->getEmail(),
@@ -85,11 +101,20 @@ class UserController extends ApiController
         }
     }
 
-    public function updateUser($id, Request $request)
+    public function updateUser($id, Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
-            $user = $userRepository->findOneBy(['id' => $id]);
+            $admin = self::getUser($request, $userRepository, $authRepository);
+            if (!$admin) {
+                $this->respondValidationError("User not valid");
+            }
 
+            $adminRoles = $admin->getRoles();
+            if (!in_array('ROLE_ADMIN', $adminRoles, true)) {
+                return $this->respondValidationError("User is not Admin");
+            }
+
+            $user = $userRepository->findOneBy(['id' => $id]);
             $request = $this->transformJsonBody($request);
             $roles = $request->get('roles');
             $user->setRoles($roles);
@@ -102,9 +127,17 @@ class UserController extends ApiController
         }
     }
 
-    public function createUser(Request $request, UserPasswordEncoderInterface $encoder)
+    public function createUser(Request $request, UserPasswordEncoderInterface $encoder, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
+            $admin = self::getUser($request, $userRepository, $authRepository);
+            if (!$admin) {
+                $this->respondValidationError("User not valid");
+            }
+            $adminRoles = $admin->getRoles();
+            if (!in_array('ROLE_ADMIN', $adminRoles, true)) {
+                return $this->respondValidationError("User is not Admin");
+            }
             $em = $this->getDoctrine()->getManager();
             $request = $this->transformJsonBody($request);
             $password = $request->get('password');
@@ -130,10 +163,19 @@ class UserController extends ApiController
         }
     }
 
-    public function deleteUser($id, UserRepository $userRepository)
+    public function deleteUser($id, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
-            $user = $userRepository->findOneBy(['id' => $id]);
+            $admin = self::getUser($request, $userRepository, $authRepository);
+            if (!$admin) {
+                $this->respondValidationError("User not valid");
+            }
+
+            $adminRoles = $admin->getRoles();
+            if (!in_array('ROLE_ADMIN', $adminRoles, true)) {
+                return $this->respondValidationError("User is not Admin");
+            }
+
             $entityManager = $this->getDoctrine()->getManager();
             $entityManager->remove($user);
             $entityManager->flush();
