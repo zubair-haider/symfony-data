@@ -16,9 +16,9 @@ class AuthController extends ApiController
             $user = $this->getUser();
             $authObj = $authRepository->findOneBy(['userId' => $user->getId()]);
             $data = [
+                'id' => $user->getId(),
                 'email' => $user->getEmail(),
                 'roles' => $user->getRoles(),
-                'token' => $authObj->getToken(),
             ];
             return $this->respondWithSuccess($data);
         } catch (\Exception $e) {
@@ -36,7 +36,7 @@ class AuthController extends ApiController
             if (empty($password) || empty($email)) {
                 return $this->respondValidationError("Invalid Password or Email");
             }
-            $user = new User($email);
+            $user = new User();
             $user->setPassword($encoder->encodePassword($user, $password));
             $user->setEmail($email);
             $em->persist($user);
@@ -52,7 +52,7 @@ class AuthController extends ApiController
         }
     }
 
-    public function createAuth(Request $request)
+    public function createAuth(Request $request, AuthRepository $authRepository)
     {
         try {
             $em = $this->getDoctrine()->getManager();
@@ -62,11 +62,16 @@ class AuthController extends ApiController
             if (empty($token) || empty($userId)) {
                 return $this->respondValidationError("Invalid Token or user Id");
             }
-            $auth = new Auth($userId);
-            $auth->setUserId($userId);
-            $auth->setToken($token);
-            $em->persist($auth);
-            $em->flush();
+            $auth = $authRepository->findOneBy(['userId' => $userId]);
+            if ($auth) {
+                $auth->setToken($token);
+            } else {
+                $auth = new Auth();
+                $auth->setUserId($userId);
+                $auth->setToken($token);
+                $em->persist($auth);
+                $em->flush();
+            }
             return $this->respondWithSuccess("Token saved");
         } catch (\Exception $e) {
             return $this->respondValidationError($e->getMessage());
