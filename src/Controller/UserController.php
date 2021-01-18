@@ -177,14 +177,14 @@ class UserController extends ApiController
                 return $this->respondValidationError("User is not Admin");
             }
 
-            $user = $userRepository->findOneBy(['id' => $id]);
             $entityManager = $this->getDoctrine()->getManager();
+
+            $user = $userRepository->findOneBy(['id' => $id]);
             $entityManager->remove($user);
-            $entityManager->flush();
 
             $auth = $authRepository->findOneBy(['userId' => $id]);
-            $entityManager = $this->getDoctrine()->getManager();
             $entityManager->remove($auth);
+            
             $entityManager->flush();
 
             return $this->respondWithSuccess("user deleted");
