@@ -66,6 +66,8 @@ class AuthController extends ApiController
             $auth = $authRepository->findOneBy(['userId' => $userId]);
             if ($auth) {
                 $auth->setToken($token);
+                $em->persist($auth);
+                $em->flush();
             } else {
                 $auth = new Auth();
                 $auth->setUserId($userId);
