@@ -10,7 +10,7 @@ use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 
 class UserController extends ApiController
 {
-    protected function getUser($request, UserRepository $userRepository, $authRepository)
+    protected function getCurrentUser($request, $userRepository, $authRepository)
     {
         $token = $request->headers->get('Authorization');
         $token = str_replace("Bearer ", "", $token);
@@ -25,7 +25,7 @@ class UserController extends ApiController
     public function userProfile(Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
-            $user = self::getUser($request, $userRepository, $authRepository);
+            $user = self::getCurrentUser($request, $userRepository, $authRepository);
             if (!$user) {
                 $this->respondValidationError("User not valid");
             }
@@ -44,7 +44,7 @@ class UserController extends ApiController
     public function userProfileUpdate(Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
-            $user = self::getUser($request, $userRepository, $authRepository);
+            $user = self::getCurrentUser($request, $userRepository, $authRepository);
             if (!$user) {
                 $this->respondValidationError("User not valid");
             }
@@ -64,7 +64,7 @@ class UserController extends ApiController
     public function userProfileDelete(Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
-            $user = self::getUser($request, $userRepository, $authRepository);
+            $user = self::getCurrentUser($request, $userRepository, $authRepository);
             if (!$user) {
                 $this->respondValidationError("User not valid");
             }
@@ -81,7 +81,7 @@ class UserController extends ApiController
     public function showUser($id, Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
-            $admin = self::getUser($request, $userRepository, $authRepository);
+            $admin = self::getCurrentUser($request, $userRepository, $authRepository);
             if (!$admin) {
                 return $this->respondValidationError("User not valid");
             }
@@ -105,7 +105,7 @@ class UserController extends ApiController
     public function updateUser($id, Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
-            $admin = self::getUser($request, $userRepository, $authRepository);
+            $admin = self::getCurrentUser($request, $userRepository, $authRepository);
             if (!$admin) {
                 $this->respondValidationError("User not valid");
             }
@@ -131,7 +131,7 @@ class UserController extends ApiController
     public function createUser(Request $request, UserPasswordEncoderInterface $encoder, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
-            $admin = self::getUser($request, $userRepository, $authRepository);
+            $admin = self::getCurrentUser($request, $userRepository, $authRepository);
             if (!$admin) {
                 $this->respondValidationError("User not valid");
             }
@@ -167,7 +167,7 @@ class UserController extends ApiController
     public function deleteUser($id,Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
-            $admin = self::getUser($request, $userRepository, $authRepository);
+            $admin = self::getCurrentUser($request, $userRepository, $authRepository);
             if (!$admin) {
                 $this->respondValidationError("User not valid");
             }

@@ -38,6 +38,7 @@ class AuthController extends ApiController
             }
             $user = new User();
             $user->setPassword($encoder->encodePassword($user, $password));
+            $user->setRoles(['USER_ROLE']);
             $user->setEmail($email);
             $em->persist($user);
             $em->flush();
