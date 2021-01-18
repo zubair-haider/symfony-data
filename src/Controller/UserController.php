@@ -164,7 +164,7 @@ class UserController extends ApiController
         }
     }
 
-    public function deleteUser($id,Request $request, UserRepository $userRepository, AuthRepository $authRepository)
+    public function deleteUser($id, Request $request, UserRepository $userRepository, AuthRepository $authRepository)
     {
         try {
             $admin = self::getCurrentUser($request, $userRepository, $authRepository);
@@ -181,6 +181,12 @@ class UserController extends ApiController
             $entityManager = $this->getDoctrine()->getManager();
             $entityManager->remove($user);
             $entityManager->flush();
+
+            $auth = $authRepository->findOneBy(['userId' => $id]);
+            $entityManager = $this->getDoctrine()->getManager();
+            $entityManager->remove($auth);
+            $entityManager->flush();
+
             return $this->respondWithSuccess("user deleted");
         } catch (\Exception $e) {
             return $this->respondValidationError($e->getMessage());
